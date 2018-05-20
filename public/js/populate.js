@@ -1,5 +1,7 @@
 var apiUrl = "http://localhost:9000/src/";
 var insertedRecords = 0;
+var errorCount = 0;
+var allErrorMsg = "";
 
 $(function () {
 
@@ -16,26 +18,37 @@ $(function () {
       apiUrl+"app.php?action=createCSVFiles"
     ).done(function(results) {
 
-      console.log("success");
-      console.log(results);
       var seedCount = results.data.seedCount;
+      var processedCount = seedCount;
 
-      $('#insertedRowsMsg').html(seedCount+ "file created for seeding. Preparing for insert into DB...");
+      $('#insertedRowsMsg').html(seedCount+ " files created for seeding. Preparing for insert into DB...");
 
       for(var i=0; i < seedCount; i++) {
         $.post(
           apiUrl+"app.php?action=populateDB",
           { "seedNumber" : i }
         ).done(function(results) {
-
-          console.log("success");
-          console.log(results);
           if(results.success) {
             var recordsProcessed = results.data.timeTakenInfo.length - results.error.length;
             insertedRecords += recordsProcessed;
             $('#insertedRowsMsg').html(insertedRecords + " rows inserted into DB...");
           } else {
-            console.log("Error: " + results.error);
+            allErrorMsg += results.error[0]+"<br>";
+            $('#errorRowsMsg').html(allErrorMsg);
+            errorCount++;
+          }
+
+          processedCount -=1;
+
+          if(processedCount === 0) {
+            $('#insertedRowsMsg').html("");
+            $('#completeMsg').html("A total of " + insertedRecords + " rows were inserted into DB. We. Are. Done!<br><br>");
+            // $.post(
+            //   apiUrl+"app.php?action=deleteAllCSV",
+            //   { "seedCount" : seedCount }
+            // ).done(function(results) {
+            //   $('#completeMsg').html("A total of " + insertedRecords + " rows were inserted into DB. We. Are. Done!");
+            // });
           }
         });
       }

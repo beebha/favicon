@@ -61,6 +61,42 @@ class FaviconService
         );
     }
 
+    public static function createTrimmedCSVFile()
+    {
+//        $maxLineCount = 200000;
+        $maxLineCount = 100;
+        $websites = array();
+
+        $file = __DIR__ . "/../data/top-million.csv";
+        $lineCount = 0;
+
+        $handle = fopen($file, "r");
+
+        while($lineCount < $maxLineCount) {
+            $line = fgets($handle);
+            $websiteDetails = explode(",", $line);
+            $websiteURL = trim($websiteDetails[1]);
+            $websites[] = $websiteURL;
+            $lineCount++;
+        }
+
+        file_put_contents(__DIR__."/../data/mainSeed.csv", implode(PHP_EOL, $websites));
+
+        fclose($handle);
+
+        $linesInEachFile = 1;
+        $filesToCreateCount = $maxLineCount/$linesInEachFile;
+
+//        print "filesToCreateCount: $filesToCreateCount\r\n\n";
+
+        // return files to create count
+        return array(
+            "mainFileName" => __DIR__."/../data/mainSeed.csv",
+            "filesToCreateCount" => $filesToCreateCount,
+            "linesInEachFile" => $linesInEachFile
+        );
+    }
+
     /**
      * Method that creates the CSV files required for seeding the DB.
      *
@@ -68,26 +104,27 @@ class FaviconService
      */
     public static function createCSVFilesForSeeding()
     {
+        $start = microtime(true);
+
+        $filesToCreateDetails = self::createTrimmedCSVFile();
+        $mainFileName = $filesToCreateDetails['mainFileName'];
+        $filesToCreateCount = $filesToCreateDetails['filesToCreateCount'];
+        $linesInEachFile = $filesToCreateDetails['linesInEachFile'];
+
         $singleFileContent = array();
 
         $count = 0;
-        $fileCount = 0;
+        $fileCount = 0;;
+        $allWebsites = file($mainFileName);
 
-        foreach (new SplFileObject(__DIR__ . "/../data/top-million.csv") as $line)
+        for($i=0; $i < count($allWebsites); $i++)
         {
-            if ($count <= 50) {
-                $websiteDetails = explode(",", $line);
-                $websiteURL = trim($websiteDetails[1]);
+            if ($count <= $filesToCreateCount) {
 
-                // only add valid websites
-                $redirectURLDetails = self::getRedirectURL($websiteURL, 5);
-                $isWebsiteURLValid = is_null($redirectURLDetails['error']);
+                $websiteURL = trim($allWebsites[$i]);
+                $singleFileContent[] = $websiteURL;
 
-                if($isWebsiteURLValid) {
-                    $singleFileContent[] = $redirectURLDetails['url'];;
-                }
-
-                if(count($singleFileContent) == 10) {
+                if(count($singleFileContent) == $linesInEachFile) {
                     file_put_contents(__DIR__."/../data/seed".$fileCount.".csv", implode(PHP_EOL, $singleFileContent));
                     $fileCount++;
                     $singleFileContent = array();
@@ -99,6 +136,12 @@ class FaviconService
                 break;
             }
         }
+
+//        print "seedCount: $fileCount\r\n\n";
+
+        $timeTaken = microtime(true) - $start;
+
+//        print "timeTaken: $timeTaken\r\n\n";
 
         // return a results array
         return array(
@@ -118,24 +161,44 @@ class FaviconService
      */
     public static function populateDBWithSeedFile($seedNumber)
     {
+//        print "populateDBWithSeedFile: $seedNumber\r\n\n";
+
+        $start = microtime(true);
+
         $errors = array();
         $urls = array();
         $timeTakenInfo = array();
         $fileName = __DIR__ . "/../data/seed".$seedNumber.".csv";
 
-        foreach (new SplFileObject($fileName) as $websiteURL)
-        {
-            $fullValidWebsiteUrl = trim($websiteURL);
-            $faviconUrlDetails = self::getFaviconURLDetails($fullValidWebsiteUrl);
-            $faviconUrl = $faviconUrlDetails['faviconUrl'];
-            $isFaviconUrlValid = $faviconUrlDetails['isValid'];
-            $timeTaken = $faviconUrlDetails['timeTaken'];
-            $timeTakenInfo[] = "$faviconUrl | $timeTaken";
+        $websites = file($fileName);
 
-            if(!$isFaviconUrlValid) {
-                $errors[] = "$faviconUrl is invalid";
+        for($i=0; $i < count($websites); $i++)
+        {
+            $websiteURL = trim($websites[$i]);
+            $redirectURLDetails = self::getRedirectURL($websiteURL, 3);
+            $isWebsiteURLValid = is_null($redirectURLDetails['error']);
+
+//            print "Website: $websiteURL\r\n\n";
+//            print "Valid: $isWebsiteURLValid\r\n\n";
+
+            if($isWebsiteURLValid) {
+                $fullValidWebsiteUrl = $redirectURLDetails['url'];
+                $faviconUrlDetails = self::getFaviconURLDetails($fullValidWebsiteUrl);
+                $faviconUrl = $faviconUrlDetails['faviconUrl'];
+                $isFaviconUrlValid = $faviconUrlDetails['isValid'];
+                $timeTaken = $faviconUrlDetails['timeTaken'];
+
+//                print "Time Taken: $faviconUrl | $timeTaken\r\n\n";
+
+                $timeTakenInfo[] = "$faviconUrl | $timeTaken";
+
+                if(!$isFaviconUrlValid) {
+                    $errors[] = "Favicon URL: $faviconUrl is invalid";
+                } else {
+                    $urls[] = array('websiteUrl' => $fullValidWebsiteUrl, 'faviconUrl' => $faviconUrl);
+                }
             } else {
-                $urls[] = array('websiteUrl' => $fullValidWebsiteUrl, 'faviconUrl' => $faviconUrl);
+                $errors[] = "Website URL: $websiteURL is invalid";
             }
         }
 
@@ -145,9 +208,13 @@ class FaviconService
         // delete the seed file
         unlink($fileName);
 
+        $timeTaken = microtime(true) - $start;
+
+//        print "Total timeTaken: $timeTaken\r\n\n";
+
         // return a results array
         return array(
-            "status" => TRUE,
+            "status" => empty($errors),
             "errorMsg" => $errors,
             "data" => array(
                 "timeTakenInfo" => $timeTakenInfo
