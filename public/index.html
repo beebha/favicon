@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <script src="js/jquery-3.3.1.min.js"></script>
+        <script src="js/favicon.js"></script>
+        <meta charset="UTF-8">
+        <title>Favicon Finder</title>
+    </head>
+    <body>
+        <section style="padding:1em;">
+            <h1>Favicon Finder</h1>
+            <div class="input-group">
+                Website URL: <input id="websiteUrl" type="text" class="form-control" size="70">
+                <span class="input-group-btn">
+                    <button id="submitBtn" class="btn btn-default" type="button" disabled>Find Favicon</button>
+                </span>
+            </div>
+            <br>
+            <div id="faviconResults">
+                <div id="faviconImgError" style="font-weight:bold;color:red;"></div>
+                <div id="faviconImgSuccess" class="input-group">
+                    <span style="padding-right:0.2em;"><b>Success!!!</b> Favicon for <span id="validWebsiteUrl"></span> is : </span>
+                    <span class="input-group-btn">
+                    <img
+                        id="faviconImg"
+                        src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+                        alt=""
+                        align="middle"
+                        height="32"
+                        width="32"
+                    >
+                    </span>
+                </div>
+            </div>
+        </section>
+    </body>
+</html>
