@@ -1,6 +1,6 @@
 var apiUrl = "http://localhost:9000/src/";
 var insertedRecords = 0;
-var processedCount = 0;
+var unProcessedCount = 0;
 var seedCount = 0;
 var errorCount = 0;
 var allErrorMsg = "";
@@ -25,7 +25,7 @@ $(function () {
     ).done(function(results) {
 
       seedCount = results.data.seedCount;
-      processedCount = seedCount;
+      unProcessedCount = seedCount;
 
       $('#insertedRowsMsg').html(seedCount+ " files created for seeding. Preparing for insert into DB...");
 
@@ -51,9 +51,11 @@ $(function () {
         errorCount++;
       }
 
-      processedCount -=1;
+      unProcessedCount -=1;
 
-      if(processedCount === 0) {
+      console.log("unProcessedCount:" + unProcessedCount);
+
+      if(unProcessedCount === 0) {
         deleteFiles();
       }
 

@@ -68,7 +68,7 @@ class FaviconService
         self::debug("FaviconService -> createTrimmedCSVFile");
 
 //        $maxLineCount = 200000;
-        $maxLineCount = 10;
+        $maxLineCount = 300;
         $websites = array();
 
         $file = __DIR__ . "/../data/top-million.csv";
@@ -145,9 +145,9 @@ class FaviconService
 
         self::debug("Total number of files created for seeding: $fileCount");
 
-        $timeTaken = microtime(true) - $start;
+        $totalTimeTaken = microtime(true) - $start;
 
-        self::debug("Time taken for creating files for seeding: $timeTaken");
+        self::debug("Total time taken for creating files for seeding: $totalTimeTaken");
 
         // return a results array
         return array(
@@ -171,7 +171,6 @@ class FaviconService
 
         $error = NULL;
         $url = NULL;
-        $timeTakenInfo = array();
         $fileName = __DIR__ . "/../data/seed".$seedNumber.".csv";
 
         $websites = file($fileName);
@@ -190,7 +189,9 @@ class FaviconService
                 $faviconUrl = $faviconUrlDetails['faviconUrl'];
                 $isFaviconUrlValid = $faviconUrlDetails['isValid'];
                 $timeTaken = $faviconUrlDetails['timeTaken'];
-                $timeTakenInfo[] = "$faviconUrl | $timeTaken";
+
+                self::debug("Favicon URL $faviconUrl is ". ($isFaviconUrlValid ? "valid" : "invalid"));
+                self::debug("Time Taken for favicon url: $faviconUrl | $timeTaken");
 
                 if(!$isFaviconUrlValid) {
                     $error = "Favicon URL: $faviconUrl is invalid";
@@ -198,7 +199,6 @@ class FaviconService
                     $url = array('websiteUrl' => $fullValidWebsiteUrl, 'faviconUrl' => $faviconUrl);
                 }
 
-                self::debug("Time Taken for favicon url: $faviconUrl | $timeTaken");
             } else {
                 $error = "Website URL: $websiteURL is invalid";
             }
@@ -207,9 +207,9 @@ class FaviconService
         $createFaviconInfoQuery = FaviconQuery::createFaviconInfoQuery($url['websiteUrl'], $url['faviconUrl']);
         DBUtils::getInsertUpdateDeleteExecutionResult($createFaviconInfoQuery);
 
-        $timeTaken = microtime(true) - $start;
+        $totalTimeTaken = microtime(true) - $start;
 
-        self::debug("Total time taken to process seed".$seedNumber.".csv is $timeTaken");
+        self::debug("Total time taken to process seed".$seedNumber.".csv is $totalTimeTaken");
 
         // return a results array
         return array(
@@ -239,7 +239,7 @@ class FaviconService
         // delete the main seed file
         unlink(__DIR__ . "/../data/mainSeed.csv");
 
-        self::debug("all files created for seeding DB have been deleted");
+        self::debug("All files created for seeding DB have been deleted");
 
         // return a results array
         return array(
@@ -249,8 +249,6 @@ class FaviconService
 
     private function getFaviconURLDetails($fullWebsiteUrl)
     {
-        self::debug("FaviconService -> getFaviconURLDetails");
-
         $start = microtime(true);
 
         $websiteUrlDetails = parse_url($fullWebsiteUrl);
@@ -307,8 +305,10 @@ class FaviconService
         $faviconUrlDetails = self::getFaviconURLDetails($websiteUrl);
         $faviconUrl = $faviconUrlDetails['faviconUrl'];
         $isFaviconUrlValid = $faviconUrlDetails['isValid'];
+        $timeTaken = $faviconUrlDetails['timeTaken'];
 
         self::debug("Favicon URL $faviconUrl is ". ($isFaviconUrlValid ? "valid" : "invalid"));
+        self::debug("Time Taken for favicon url: $faviconUrl | $timeTaken");
 
         if(!$isFaviconUrlValid) {
 
@@ -331,7 +331,7 @@ class FaviconService
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_HEADER, 1);
-        // don't download content - saves time
+        // don't download content to save time
         curl_setopt($ch, CURLOPT_NOBODY, 1);
         curl_setopt($ch, CURLOPT_FAILONERROR, 1);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -352,7 +352,7 @@ class FaviconService
         // Set to true so that PHP follows any "Location:" header
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        // set the timeout value to trying to connect to a site to 10 seconds
+        // set the timeout value to trying to connect to a site by specified timeout value in seconds
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT ,$timeout);
         curl_exec($ch);
 
@@ -360,7 +360,7 @@ class FaviconService
         if(curl_errno($ch)) {
             $error = curl_error($ch);
         } else {
-            $url = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL); // This is what you need, it will return you the last effective URL
+            $url = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
             if(substr($url, -1) == '/') {
                 $url = substr($url, 0, -1);
             }
@@ -373,6 +373,7 @@ class FaviconService
 
     private function debug($msg)
     {
+        date_default_timezone_set('America/New_York');
         // check if log exists, create if it does not exist
         $logDirName = __DIR__ ."/../../logs";
 

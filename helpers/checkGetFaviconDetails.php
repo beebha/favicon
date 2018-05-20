@@ -9,7 +9,7 @@ require_once __DIR__.'/../src/common/includes.php';
  * EX: checkGetFaviconDetails.php --url=www.google.com OR checkGetFaviconDetails.php
  *
  * Script must be run from command line as follows:
- * - Go to the directory: cd /favicon/src/helpers
+ * - Go to the directory: cd /favicon/helpers
  * - Run file with default website URL: php -d safe_mode=Off checkGetFaviconDetails.php
  * - Run file with specific website URL: php -d safe_mode=Off checkGetFaviconDetails.php --url=www.crayon.co
  *
