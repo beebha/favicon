@@ -66,4 +66,22 @@ class FaviconController
 
         return $result;
     }
+
+    /**
+     * Method executes call in @see FaviconService::deleteCreatedCSVFiles
+     *
+     * @param $fileCount
+     * @return array
+     */
+    public static function deleteFiles($fileCount)
+    {
+        $result = array();
+
+        $resultData = FaviconService::deleteCreatedCSVFiles($fileCount);
+
+        // return a response array
+        $result['success'] = $resultData['status'];
+
+        return $result;
+    }
 }

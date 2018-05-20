@@ -25,23 +25,13 @@ class FaviconQuery
                 WHERE website_url = " . DBUtils::getDBValue(DBUtils::DB_STRING, $websiteUrl);
     }
 
-    public static function createBulkFaviconInfoQuery(array $urls)
+    public static function createFaviconInfoQuery($websiteUrl, $faviconUrl)
     {
-        $queriesToBeExecuted = array();
-        foreach($urls as $singleUrl)
-        {
-            $websiteUrl = $singleUrl['websiteUrl'];
-            $faviconUrl = $singleUrl['faviconUrl'];
-
-            $query = "INSERT IGNORE INTO favicon_info
+        return "INSERT IGNORE INTO favicon_info
                 (website_url, favicon_url, create_date) values (" .
                 DBUtils::getDBValue(DBUtils::DB_STRING, $websiteUrl) . "," .
                 DBUtils::getDBValue(DBUtils::DB_STRING, $faviconUrl) . ",
                 CURRENT_TIMESTAMP)";
-            $queriesToBeExecuted[] = $query;
-        }
-
-        return $queriesToBeExecuted;
     }
 }
  

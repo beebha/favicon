@@ -7,7 +7,7 @@ $(function () {
 
   $('#populateBtn').click(function() {
     console.log("Populate Button clicked");
-    $('#populateBtn').prop('disabled', true);
+    $('#populateBtn').hide();
     populate();
   });
 
@@ -41,14 +41,13 @@ $(function () {
           processedCount -=1;
 
           if(processedCount === 0) {
-            $('#insertedRowsMsg').html("");
-            $('#completeMsg').html("A total of " + insertedRecords + " rows were inserted into DB. We. Are. Done!<br><br>");
-            // $.post(
-            //   apiUrl+"app.php?action=deleteAllCSV",
-            //   { "seedCount" : seedCount }
-            // ).done(function(results) {
-            //   $('#completeMsg').html("A total of " + insertedRecords + " rows were inserted into DB. We. Are. Done!");
-            // });
+            $.post(
+              apiUrl+"app.php?action=deleteFiles",
+              { "fileCount" : seedCount }
+            ).done(function() {
+              $('#insertedRowsMsg').html("");
+              $('#completeMsg').html("A total of " + insertedRecords + " rows were inserted into DB. We. Are. Done!");
+            });
           }
         });
       }

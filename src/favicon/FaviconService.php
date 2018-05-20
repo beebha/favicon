@@ -64,7 +64,7 @@ class FaviconService
     public static function createTrimmedCSVFile()
     {
 //        $maxLineCount = 200000;
-        $maxLineCount = 100;
+        $maxLineCount = 10;
         $websites = array();
 
         $file = __DIR__ . "/../data/top-million.csv";
@@ -166,7 +166,7 @@ class FaviconService
         $start = microtime(true);
 
         $errors = array();
-        $urls = array();
+        $url = NULL;
         $timeTakenInfo = array();
         $fileName = __DIR__ . "/../data/seed".$seedNumber.".csv";
 
@@ -195,18 +195,18 @@ class FaviconService
                 if(!$isFaviconUrlValid) {
                     $errors[] = "Favicon URL: $faviconUrl is invalid";
                 } else {
-                    $urls[] = array('websiteUrl' => $fullValidWebsiteUrl, 'faviconUrl' => $faviconUrl);
+                    $url = array('websiteUrl' => $fullValidWebsiteUrl, 'faviconUrl' => $faviconUrl);
                 }
             } else {
                 $errors[] = "Website URL: $websiteURL is invalid";
             }
         }
 
-        $createBulkFaviconInfoQueries = FaviconQuery::createBulkFaviconInfoQuery($urls);
-        DBUtils::getInsertUpdateDeleteBulkExecutionResult($createBulkFaviconInfoQueries);
+        $createFaviconInfoQuery = FaviconQuery::createFaviconInfoQuery($url['websiteUrl'], $url['faviconUrl']);
+        DBUtils::getInsertUpdateDeleteExecutionResult($createFaviconInfoQuery);
 
-        // delete the seed file
-        unlink($fileName);
+//        // delete the seed file
+//        unlink($fileName);
 
         $timeTaken = microtime(true) - $start;
 
@@ -219,6 +219,24 @@ class FaviconService
             "data" => array(
                 "timeTakenInfo" => $timeTakenInfo
             )
+        );
+    }
+
+    public static function deleteCreatedCSVFiles($fileCount)
+    {
+        for($i=0; $i < $fileCount; $i++)
+        {
+            $fileName = __DIR__ . "/../data/seed".$i.".csv";
+            // delete the seed file
+            unlink($fileName);
+        }
+
+        // delete the main seed file
+        unlink(__DIR__ . "/../data/mainSeed.csv");
+
+        // return a results array
+        return array(
+            "status" => TRUE
         );
     }
 

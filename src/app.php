@@ -31,6 +31,11 @@ try {
             $seedNumber = intval($_POST['seedNumber']);
             $result = FaviconController::populateDB($seedNumber);
         }
+
+        if($action == 'deleteFiles') {
+            $fileCount = intval($_POST['fileCount']);
+            $result = FaviconController::deleteFiles($fileCount);
+        }
     }
 } catch (APIException $ex) {
     $result['error'] = $ex->getMessage();;
