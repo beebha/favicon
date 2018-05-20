@@ -35,7 +35,8 @@ $(function () {
       console.log(results);
       if(results.success) {
         $('#validWebsiteUrl').html(results.data.websiteUrl);
-        $('#faviconImg').attr("src", results.data.faviconUrl);
+        // pass date so image is not cached
+        $('#faviconImg').attr("src", results.data.faviconUrl+"?random="+new Date().getTime());
         $('#faviconImgSuccess').show();
         $('#faviconImgError').hide();
       } else {

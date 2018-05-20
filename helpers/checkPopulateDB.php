@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__.'/../common/includes.php';
+require_once __DIR__.'/../src/common/includes.php';
 
 /**
  * Check seeding and population of data service via command line

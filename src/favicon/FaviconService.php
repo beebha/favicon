@@ -163,7 +163,7 @@ class FaviconService
         $websiteUrl = $websiteUrlDetails['scheme'] . "://". $websiteUrlDetails['host'];
         $faviconRelativeUrl = "/favicon.ico";
 
-        print "Website URL : " . $websiteUrl. "\r\n";
+//        print "Website: " . $websiteUrl. "\r\r\n";
 
         $dom = new DOMDocument();
         libxml_use_internal_errors(true);
@@ -171,6 +171,8 @@ class FaviconService
 
         $links = $dom->getElementsByTagName('link');
         $linksCount = $links->length;
+
+//        print "Links count in getFaviconURLDetails: " . $linksCount. "\r\r\n";
 
         if($linksCount > 0)
         {
@@ -182,20 +184,27 @@ class FaviconService
                 if(strcasecmp($item->getAttribute("rel"),"shortcut icon") === 0) {
                     $faviconRelativeUrl = $href;
                     break;
-                } else if (strcasecmp($item->getAttribute("rel"),"icon") === 0 && stripos($href, "favicon") !== FALSE) {
+                } else if (strcasecmp($item->getAttribute("rel"),"icon") === 0 &&
+                    stripos($href, "favicon") !== FALSE) {
                     $faviconRelativeUrl = $href;
                     break;
                 }
             }
         }
 
-        if($faviconRelativeUrl[0] === "/" && $faviconRelativeUrl[1] === "/") {
+//        print "Favicon Relative URL in getFaviconURLDetails: " . $faviconRelativeUrl. "\r\r\n";
+
+        if(empty($faviconRelativeUrl)) {
+            $faviconUrl = $websiteUrl . "/favicon.ico";
+        } else if($faviconRelativeUrl[0] === "/" && $faviconRelativeUrl[1] === "/") {
             $faviconUrl = str_replace("//", "http://", $faviconRelativeUrl);
         } else if($faviconRelativeUrl[0] === "/") {
             $faviconUrl = $websiteUrl . $faviconRelativeUrl;
         } else {
             $faviconUrl = trim($faviconRelativeUrl);
         }
+
+//        print "Favicon URL in getFaviconURLDetails: " . $websiteUrl. "\r\r\n";
 
         $isFaviconURLValid = self::isURLValid($faviconUrl);
 
@@ -210,6 +219,9 @@ class FaviconService
         $faviconUrlDetails = self::getFaviconURLDetails($websiteUrl);
         $faviconUrl = $faviconUrlDetails['faviconUrl'];
         $isFaviconUrlValid = $faviconUrlDetails['isValid'];
+
+//        print 'Favicon URL : ' .$faviconUrl. "\r\r\n";
+//        print 'Valid? ' . ($isFaviconUrlValid ? "yes" : "no"). "\r\r\n";
 
         if(!$isFaviconUrlValid) {
 
@@ -272,4 +284,15 @@ class FaviconService
 
         return array('url' => trim($url), 'error' => $error);
     }
+// TODO
+//    private function debug($msg)
+//    {
+//        // check if log exists, create if it does not exist
+//        $logDirName = __DIR__ ."/../../logs";
+//        $logFileName = 'test.txt';
+//        if(is_dir($dirName) === false )
+//        {
+//            mkdir($dirName);
+//        }
+//    }
 }
