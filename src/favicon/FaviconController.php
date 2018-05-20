@@ -62,7 +62,6 @@ class FaviconController
         // return a response array
         $result['success'] = $resultData['status'];
         $result['error'] = $resultData['errorMsg'];
-        $result['data'] = $resultData['data'];
 
         return $result;
     }

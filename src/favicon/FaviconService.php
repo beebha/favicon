@@ -16,6 +16,8 @@ class FaviconService
      */
     public static function getFaviconDetails($origWebsiteUrl, $getLatestFaviconUrl)
     {
+        self::debug("FaviconService -> getFaviconDetails");
+
         $faviconUrl = NULL;
         $errorMsg = NULL;
         $faviconStatusMsg = NULL;
@@ -63,6 +65,8 @@ class FaviconService
 
     public static function createTrimmedCSVFile()
     {
+        self::debug("FaviconService -> createTrimmedCSVFile");
+
 //        $maxLineCount = 200000;
         $maxLineCount = 10;
         $websites = array();
@@ -87,7 +91,7 @@ class FaviconService
         $linesInEachFile = 1;
         $filesToCreateCount = $maxLineCount/$linesInEachFile;
 
-//        print "filesToCreateCount: $filesToCreateCount\r\n\n";
+        self::debug("filesToCreateCount: $filesToCreateCount");
 
         // return files to create count
         return array(
@@ -104,6 +108,8 @@ class FaviconService
      */
     public static function createCSVFilesForSeeding()
     {
+        self::debug("FaviconService -> createCSVFilesForSeeding");
+
         $start = microtime(true);
 
         $filesToCreateDetails = self::createTrimmedCSVFile();
@@ -137,11 +143,11 @@ class FaviconService
             }
         }
 
-//        print "seedCount: $fileCount\r\n\n";
+        self::debug("Total number of files created for seeding: $fileCount");
 
         $timeTaken = microtime(true) - $start;
 
-//        print "timeTaken: $timeTaken\r\n\n";
+        self::debug("Time taken for creating files for seeding: $timeTaken");
 
         // return a results array
         return array(
@@ -161,11 +167,9 @@ class FaviconService
      */
     public static function populateDBWithSeedFile($seedNumber)
     {
-//        print "populateDBWithSeedFile: $seedNumber\r\n\n";
-
         $start = microtime(true);
 
-        $errors = array();
+        $error = NULL;
         $url = NULL;
         $timeTakenInfo = array();
         $fileName = __DIR__ . "/../data/seed".$seedNumber.".csv";
@@ -178,8 +182,7 @@ class FaviconService
             $redirectURLDetails = self::getRedirectURL($websiteURL, 3);
             $isWebsiteURLValid = is_null($redirectURLDetails['error']);
 
-//            print "Website: $websiteURL\r\n\n";
-//            print "Valid: $isWebsiteURLValid\r\n\n";
+            self::debug("Website $websiteURL is ". ($isWebsiteURLValid ? "valid" : "invalid"));
 
             if($isWebsiteURLValid) {
                 $fullValidWebsiteUrl = $redirectURLDetails['url'];
@@ -187,43 +190,45 @@ class FaviconService
                 $faviconUrl = $faviconUrlDetails['faviconUrl'];
                 $isFaviconUrlValid = $faviconUrlDetails['isValid'];
                 $timeTaken = $faviconUrlDetails['timeTaken'];
-
-//                print "Time Taken: $faviconUrl | $timeTaken\r\n\n";
-
                 $timeTakenInfo[] = "$faviconUrl | $timeTaken";
 
                 if(!$isFaviconUrlValid) {
-                    $errors[] = "Favicon URL: $faviconUrl is invalid";
+                    $error = "Favicon URL: $faviconUrl is invalid";
                 } else {
                     $url = array('websiteUrl' => $fullValidWebsiteUrl, 'faviconUrl' => $faviconUrl);
                 }
+
+                self::debug("Time Taken for favicon url: $faviconUrl | $timeTaken");
             } else {
-                $errors[] = "Website URL: $websiteURL is invalid";
+                $error = "Website URL: $websiteURL is invalid";
             }
         }
 
         $createFaviconInfoQuery = FaviconQuery::createFaviconInfoQuery($url['websiteUrl'], $url['faviconUrl']);
         DBUtils::getInsertUpdateDeleteExecutionResult($createFaviconInfoQuery);
 
-//        // delete the seed file
-//        unlink($fileName);
-
         $timeTaken = microtime(true) - $start;
 
-//        print "Total timeTaken: $timeTaken\r\n\n";
+        self::debug("Total time taken to process seed".$seedNumber.".csv is $timeTaken");
 
         // return a results array
         return array(
-            "status" => empty($errors),
-            "errorMsg" => $errors,
-            "data" => array(
-                "timeTakenInfo" => $timeTakenInfo
-            )
+            "status" => empty($error),
+            "errorMsg" => $error
         );
     }
 
+    /**
+     * Method that deletes all files created for seeding including the main seed file.
+     *
+     * @param $fileCount
+     * @return array
+     */
+
     public static function deleteCreatedCSVFiles($fileCount)
     {
+        self::debug("FaviconService -> deleteCreatedCSVFiles");
+
         for($i=0; $i < $fileCount; $i++)
         {
             $fileName = __DIR__ . "/../data/seed".$i.".csv";
@@ -234,6 +239,8 @@ class FaviconService
         // delete the main seed file
         unlink(__DIR__ . "/../data/mainSeed.csv");
 
+        self::debug("all files created for seeding DB have been deleted");
+
         // return a results array
         return array(
             "status" => TRUE
@@ -242,13 +249,13 @@ class FaviconService
 
     private function getFaviconURLDetails($fullWebsiteUrl)
     {
+        self::debug("FaviconService -> getFaviconURLDetails");
+
         $start = microtime(true);
 
         $websiteUrlDetails = parse_url($fullWebsiteUrl);
         $websiteUrl = $websiteUrlDetails['scheme'] . "://". $websiteUrlDetails['host'];
         $faviconRelativeUrl = "/favicon.ico";
-
-//        print "Website: " . $websiteUrl. "\r\r\n";
 
         $dom = new DOMDocument();
         libxml_use_internal_errors(true);
@@ -256,8 +263,6 @@ class FaviconService
 
         $links = $dom->getElementsByTagName('link');
         $linksCount = $links->length;
-
-//        print "Links count in getFaviconURLDetails: " . $linksCount. "\r\r\n";
 
         if($linksCount > 0)
         {
@@ -277,8 +282,6 @@ class FaviconService
             }
         }
 
-//        print "Favicon Relative URL in getFaviconURLDetails: " . $faviconRelativeUrl. "\r\r\n";
-
         if(empty($faviconRelativeUrl)) {
             $faviconUrl = $websiteUrl . "/favicon.ico";
         } else if($faviconRelativeUrl[0] === "/" && $faviconRelativeUrl[1] === "/") {
@@ -289,8 +292,6 @@ class FaviconService
             $faviconUrl = trim($faviconRelativeUrl);
         }
 
-//        print "Favicon URL in getFaviconURLDetails: " . $websiteUrl. "\r\r\n";
-
         $isFaviconURLValid = self::isURLValid($faviconUrl);
 
         $timeTaken = microtime(true) - $start;
@@ -300,13 +301,14 @@ class FaviconService
 
     private function updateLatestFaviconDetails($websiteUrl)
     {
+        self::debug("FaviconService -> updateLatestFaviconDetails");
+
         $errorMsg = NULL;
         $faviconUrlDetails = self::getFaviconURLDetails($websiteUrl);
         $faviconUrl = $faviconUrlDetails['faviconUrl'];
         $isFaviconUrlValid = $faviconUrlDetails['isValid'];
 
-//        print 'Favicon URL : ' .$faviconUrl. "\r\r\n";
-//        print 'Valid? ' . ($isFaviconUrlValid ? "yes" : "no"). "\r\r\n";
+        self::debug("Favicon URL $faviconUrl is ". ($isFaviconUrlValid ? "valid" : "invalid"));
 
         if(!$isFaviconUrlValid) {
 
@@ -355,8 +357,7 @@ class FaviconService
         curl_exec($ch);
 
         // Check if any error occurred
-        if(curl_errno($ch))
-        {
+        if(curl_errno($ch)) {
             $error = curl_error($ch);
         } else {
             $url = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL); // This is what you need, it will return you the last effective URL
@@ -369,15 +370,18 @@ class FaviconService
 
         return array('url' => trim($url), 'error' => $error);
     }
-// TODO
-//    private function debug($msg)
-//    {
-//        // check if log exists, create if it does not exist
-//        $logDirName = __DIR__ ."/../../logs";
-//        $logFileName = 'test.txt';
-//        if(is_dir($dirName) === false )
-//        {
-//            mkdir($dirName);
-//        }
-//    }
+
+    private function debug($msg)
+    {
+        // check if log exists, create if it does not exist
+        $logDirName = __DIR__ ."/../../logs";
+
+        if(is_dir($logDirName) === false )
+        {
+            mkdir($logDirName, 0777, true);
+        }
+
+        $logFileName = $logDirName. '/favicon_log_' .date('d-M-Y'). '.log';
+        file_put_contents($logFileName, $msg . "\n", FILE_APPEND);
+    }
 }

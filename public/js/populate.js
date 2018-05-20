@@ -43,11 +43,10 @@ $(function () {
     ).done(function(results) {
 
       if(results.success) {
-        var recordsProcessed = results.data.timeTakenInfo.length - results.error.length;
-        insertedRecords += recordsProcessed;
+        insertedRecords += 1;
         $('#insertedRowsMsg').html(insertedRecords + " rows inserted into DB...");
       } else {
-        allErrorMsg += results.error[0]+"<br>";
+        allErrorMsg += results.error+"<br>";
         $('#errorRowsMsg').html(allErrorMsg);
         errorCount++;
       }
