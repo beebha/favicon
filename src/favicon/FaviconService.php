@@ -68,7 +68,7 @@ class FaviconService
         self::debug("FaviconService -> createTrimmedCSVFile");
 
 //        $maxLineCount = 200000;
-        $maxLineCount = 300;
+        $maxLineCount = 100;
         $websites = array();
 
         $file = __DIR__ . "/../data/top-million.csv";
@@ -80,8 +80,10 @@ class FaviconService
             $line = fgets($handle);
             $websiteDetails = explode(",", $line);
             $websiteURL = trim($websiteDetails[1]);
-            $websites[] = $websiteURL;
-            $lineCount++;
+            if(!empty($websiteURL)) {
+                $websites[] = $websiteURL;
+                $lineCount++;
+            }
         }
 
         file_put_contents(__DIR__."/../data/mainSeed.csv", implode(PHP_EOL, $websites));
@@ -178,7 +180,7 @@ class FaviconService
         for($i=0; $i < count($websites); $i++)
         {
             $websiteURL = trim($websites[$i]);
-            $redirectURLDetails = self::getRedirectURL($websiteURL, 3);
+            $redirectURLDetails = self::getRedirectURL($websiteURL, 10);
             $isWebsiteURLValid = is_null($redirectURLDetails['error']);
 
             self::debug("Website $websiteURL is ". ($isWebsiteURLValid ? "valid" : "invalid"));
@@ -283,7 +285,7 @@ class FaviconService
         if(empty($faviconRelativeUrl)) {
             $faviconUrl = $websiteUrl . "/favicon.ico";
         } else if($faviconRelativeUrl[0] === "/" && $faviconRelativeUrl[1] === "/") {
-            $faviconUrl = str_replace("//", "http://", $faviconRelativeUrl);
+            $faviconUrl = str_replace("//", $websiteUrlDetails['scheme'] . "://", $faviconRelativeUrl);
         } else if($faviconRelativeUrl[0] === "/") {
             $faviconUrl = $websiteUrl . $faviconRelativeUrl;
         } else {
@@ -328,19 +330,17 @@ class FaviconService
 
     private function isURLValid($url)
     {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_HEADER, 1);
-        // don't download content to save time
-        curl_setopt($ch, CURLOPT_NOBODY, 1);
-        curl_setopt($ch, CURLOPT_FAILONERROR, 1);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        $urlExists = true;
+        $headers = array_change_key_case(get_headers($url, 1), CASE_LOWER);
 
-        curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        if(stripos(@$headers['content-type'], "image") === FALSE)
+        {
+            $urlExists = false;
+            self::debug("Favicon URL content-type is not an image");
+            self::debug(print_r($headers, true));
+        }
 
-        return $httpCode != 404;
+        return $urlExists;
     }
 
     private function getRedirectURL($url, $timeout)
@@ -353,7 +353,7 @@ class FaviconService
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         // set the timeout value to trying to connect to a site by specified timeout value in seconds
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT ,$timeout);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
         curl_exec($ch);
 
         // Check if any error occurred

@@ -29,6 +29,6 @@ function deleteSeedFiles()
         $fileCount = count($files);
     }
 
-    print "Found $fileCount seed files";
+    print "\r\nFound $fileCount seed files\r\n";
     FaviconService::deleteCreatedCSVFiles($fileCount);
 }
