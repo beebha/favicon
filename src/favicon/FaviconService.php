@@ -130,7 +130,9 @@ class FaviconService
             if ($count <= $filesToCreateCount) {
 
                 $websiteURL = trim($allWebsites[$i]);
-                $singleFileContent[] = $websiteURL;
+                if(!empty($websiteURL)) {
+                    $singleFileContent[] = $websiteURL;
+                }
 
                 if(count($singleFileContent) == $linesInEachFile) {
                     file_put_contents(__DIR__."/../data/seed".$fileCount.".csv", implode(PHP_EOL, $singleFileContent));
@@ -198,16 +200,14 @@ class FaviconService
                 if(!$isFaviconUrlValid) {
                     $error = "Favicon URL: $faviconUrl is invalid";
                 } else {
-                    $url = array('websiteUrl' => $fullValidWebsiteUrl, 'faviconUrl' => $faviconUrl);
+                    $createFaviconInfoQuery = FaviconQuery::createFaviconInfoQuery($fullValidWebsiteUrl, $faviconUrl);
+                    DBUtils::getInsertUpdateDeleteExecutionResult($createFaviconInfoQuery);
                 }
 
             } else {
                 $error = "Website URL: $websiteURL is invalid";
             }
         }
-
-        $createFaviconInfoQuery = FaviconQuery::createFaviconInfoQuery($url['websiteUrl'], $url['faviconUrl']);
-        DBUtils::getInsertUpdateDeleteExecutionResult($createFaviconInfoQuery);
 
         $totalTimeTaken = microtime(true) - $start;
 
